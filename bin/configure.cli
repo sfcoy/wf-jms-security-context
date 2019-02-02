@@ -1,0 +1,21 @@
+# Execute offline
+embed-server --server-config=standalone-full.xml
+
+/subsystem=elytron/properties-realm=DemoPropsRealm:add(groups-attribute=groups,\
+    groups-properties={path=demo-roles.properties,relative-to=jboss.server.config.dir},\
+    users-properties={path=demo-users.properties,relative-to=jboss.server.config.dir,plain-text=true})
+
+/subsystem=elytron/security-domain=DemoDomain:add(realms=[{realm=DemoPropsRealm,role-decoder=groups-to-roles}],\
+    default-realm=DemoPropsRealm,permission-mapper=default-permission-mapper)
+
+/subsystem=elytron/http-authentication-factory=demo-http-auth:add(\
+    http-server-mechanism-factory=global,\
+    security-domain=DemoDomain,\
+    mechanism-configurations=[\
+        {mechanism-name=BASIC, mechanism-realm-configurations=[{realm-name=DemoApplicationDomain}]}])
+
+/subsystem=ejb3/application-security-domain=DemoApplicationDomain:add(security-domain=DemoDomain)
+
+/subsystem=undertow/application-security-domain=DemoApplicationDomain:add(http-authentication-factory=demo-http-auth)
+
+/subsystem=messaging-activemq/server=default/jms-queue=demoQueue:add(entries=[queues/demoQueue])
